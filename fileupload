@@ -4,7 +4,7 @@ import DocumentPicker from 'react-native-document-picker';
 import axios from 'axios';
 import RNFetchBlob from 'rn-fetch-blob';
 
-const FileUploadDownload = () => {
+const App = () => {
     const [file, setFile] = useState(null);
     const [downloadStatus, setDownloadStatus] = useState('');
 
@@ -35,7 +35,7 @@ const FileUploadDownload = () => {
         });
 
         try {
-            const response = await axios.post('http://localhost:8080/api/files/upload', formData, {
+            const response = await axios.post('http://your-server-ip:8080/api/files/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -60,11 +60,11 @@ const FileUploadDownload = () => {
                 path: filePath,
                 description: 'Downloading file',
             },
-            path: filePath, // For iOS
+            path: filePath,
         };
 
         config(options)
-            .fetch('GET', 'http://localhost:8080/api/files/download/yourfile.jpg') // Replace with your actual file path
+            .fetch('GET', 'http://your-server-ip:8080/api/files/download/yourfile.jpg') // Replace with your actual file path
             .then((res) => {
                 setDownloadStatus('File downloaded successfully');
             })
@@ -98,4 +98,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default FileUploadDownload;
+export default App;
