@@ -8,13 +8,17 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
 
   const pickFile = async () => {
-    let result = await DocumentPicker.getDocumentAsync({
-      type: '*/*', // Allow any type of file
-      copyToCacheDirectory: true,
-    });
+    try {
+      let result = await DocumentPicker.getDocumentAsync({
+        type: '*/*', // Allow any type of file
+        copyToCacheDirectory: true,
+      });
 
-    if (result.type === 'success') {
-      setFile(result);
+      if (result.type === 'success') {
+        setFile(result);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick file');
     }
   };
 
