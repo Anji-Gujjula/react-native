@@ -1,18 +1,88 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { View, Button, Text, StyleSheet, Alert } from 'react-native';
+import DocumentPicker from 'react-native-document-picker';
+import axios from 'axios';
+import RNFetchBlob from 'rn-fetch-blob';
 
-export default function App() {
+const App = () => {
+  const [uploadedFilePath, setUploadedFilePath] = useState('');
+
+  // Backend URL
+  const BACKEND_URL = 'http://YOUR_BACKEND_IP:5000';
+
+  const uploadFile = async () => {
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+      });
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: res.uri,
+        type: res.type,
+        name: res.name,
+      });
+
+      const response = await axios.post(`${BACKEND_URL}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setUploadedFilePath(response.data.filePath);
+      Alert.alert('File Uploaded!', `File path: ${response.data.filePath}`);
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        Alert.alert('Canceled');
+      } else {
+        Alert.alert('Error', err.message);
+      }
+    }
+  };
+
+  const downloadFile = () => {
+    if (!uploadedFilePath) {
+      Alert.alert('No file uploaded');
+      return;
+    }
+
+    const { config, fs } = RNFetchBlob;
+    let DownloadDir = fs.dirs.DownloadDir;
+    let fileUrl = `${BACKEND_URL}${uploadedFilePath}`;
+    let fileName = uploadedFilePath.split('/').pop();
+
+    config({
+      fileCache: true,
+      addAndroidDownloads: {
+        useDownloadManager: true,
+        notification: true,
+        path: `${DownloadDir}/${fileName}`,
+        description: 'Downloading file',
+      },
+    })
+      .fetch('GET', fileUrl)
+      .then((res) => {
+        Alert.alert('File Downloaded', `File saved to ${res.path()}`);
+      })
+      .catch((error) => {
+        Alert.alert('Error', error.message);
+      });
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Hello, World!</Text>
+      <Button title="Upload File" onPress={uploadFile} />
+      <Button title="Download File" onPress={downloadFile} />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
   },
 });
+
+export default App;
