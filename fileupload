@@ -14,14 +14,18 @@ const App = () => {
                 type: [DocumentPicker.types.allFiles],
             });
 
-            // Check the response structure and extract file information
+            // Ensure file is selected and has the necessary attributes
             if (res && res.length > 0) {
                 const selectedFile = res[0];
+                // Debugging output
+                console.log('Selected file:', selectedFile);
                 setFile({
                     uri: selectedFile.uri,
                     name: selectedFile.name,
                     type: selectedFile.type,
                 });
+            } else {
+                Alert.alert('No file selected');
             }
         } catch (err) {
             if (DocumentPicker.isCancel(err)) {
@@ -41,11 +45,17 @@ const App = () => {
 
         const { uri, name, type } = file;
 
+        // Ensure uri is valid and handle iOS-specific issue
+        const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
+
+        // Debugging output
+        console.log('Uploading file:', { uri: fileUri, name, type });
+
         const formData = new FormData();
         formData.append('file', {
-            uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
-            name: name,
-            type: type,
+            uri: fileUri,
+            name: name || 'file', // Provide a default name if necessary
+            type: type || 'application/octet-stream', // Provide a default type if necessary
         });
 
         try {
