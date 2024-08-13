@@ -1,125 +1,18 @@
-import React, { useState } from 'react';
-import { View, Button, Text, StyleSheet, Platform, Alert } from 'react-native';
-import DocumentPicker from 'react-native-document-picker';
-import axios from 'axios';
-import RNFetchBlob from 'rn-fetch-blob';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
-const App = () => {
-    const [file, setFile] = useState(null);
-    const [downloadStatus, setDownloadStatus] = useState('');
-
-    const selectFile = async () => {
-        try {
-            const res = await DocumentPicker.pick({
-                type: [DocumentPicker.types.allFiles],
-            });
-
-            // Ensure file is selected and has the necessary attributes
-            if (res && res.length > 0) {
-                const selectedFile = res[0];
-                // Debugging output
-                console.log('Selected file:', selectedFile);
-                setFile({
-                    uri: selectedFile.uri,
-                    name: selectedFile.name,
-                    type: selectedFile.type,
-                });
-            } else {
-                Alert.alert('No file selected');
-            }
-        } catch (err) {
-            if (DocumentPicker.isCancel(err)) {
-                Alert.alert('Canceled');
-            } else {
-                console.error('Error selecting file:', err);
-                Alert.alert('Error selecting file');
-            }
-        }
-    };
-
-    const uploadFile = async () => {
-        if (!file) {
-            Alert.alert('No file selected');
-            return;
-        }
-
-        const { uri, name, type } = file;
-
-        // Ensure uri is valid and handle iOS-specific issue
-        const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
-
-        // Debugging output
-        console.log('Uploading file:', { uri: fileUri, name, type });
-
-        const formData = new FormData();
-        formData.append('file', {
-            uri: fileUri,
-            name: name || 'file', // Provide a default name if necessary
-            type: type || 'application/octet-stream', // Provide a default type if necessary
-        });
-
-        try {
-            const response = await axios.post('http://your-server-ip:8080/api/files/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            Alert.alert('File uploaded successfully');
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            Alert.alert('File upload failed');
-        }
-    };
-
-    const downloadFile = async () => {
-        const { config, fs } = RNFetchBlob;
-        let DownloadDir = fs.dirs.DownloadDir;
-        let filePath = `${DownloadDir}/downloadedFile.jpg`; // Change file type accordingly
-
-        let options = {
-            fileCache: true,
-            addAndroidDownloads: {
-                useDownloadManager: true,
-                notification: true,
-                path: filePath,
-                description: 'Downloading file',
-            },
-            path: filePath,
-        };
-
-        config(options)
-            .fetch('GET', 'http://your-server-ip:8080/api/files/download/yourfile.jpg') // Replace with your actual file path
-            .then((res) => {
-                setDownloadStatus('File downloaded successfully');
-            })
-            .catch((error) => {
-                console.error('Error downloading file:', error);
-                setDownloadStatus('File download failed');
-            });
-    };
-
-    return (
-        <View style={styles.container}>
-            <Button title="Select File" onPress={selectFile} />
-            {file && <Text style={styles.text}>File Selected: {file.name}</Text>}
-            <Button title="Upload File" onPress={uploadFile} />
-            <Button title="Download File" onPress={downloadFile} />
-            {downloadStatus !== '' && <Text style={styles.text}>{downloadStatus}</Text>}
-        </View>
-    );
-};
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text>Hello, World!</Text>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 16,
-    },
-    text: {
-        margin: 10,
-        fontSize: 16,
-    },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
-
-export default App;
