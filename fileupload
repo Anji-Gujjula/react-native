@@ -13,13 +13,21 @@ const App = () => {
             const res = await DocumentPicker.pick({
                 type: [DocumentPicker.types.allFiles],
             });
-            // Store the file information
-            setFile(res[0]);
+
+            // Check the response structure and extract file information
+            if (res && res.length > 0) {
+                const selectedFile = res[0];
+                setFile({
+                    uri: selectedFile.uri,
+                    name: selectedFile.name,
+                    type: selectedFile.type,
+                });
+            }
         } catch (err) {
             if (DocumentPicker.isCancel(err)) {
                 Alert.alert('Canceled');
             } else {
-                console.error(err);
+                console.error('Error selecting file:', err);
                 Alert.alert('Error selecting file');
             }
         }
@@ -48,7 +56,7 @@ const App = () => {
             });
             Alert.alert('File uploaded successfully');
         } catch (error) {
-            console.error(error);
+            console.error('Error uploading file:', error);
             Alert.alert('File upload failed');
         }
     };
@@ -75,7 +83,7 @@ const App = () => {
                 setDownloadStatus('File downloaded successfully');
             })
             .catch((error) => {
-                console.error(error);
+                console.error('Error downloading file:', error);
                 setDownloadStatus('File download failed');
             });
     };
