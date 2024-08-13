@@ -1,0 +1,101 @@
+import React, { useState } from 'react';
+import { View, Button, Text, StyleSheet, Platform } from 'react-native';
+import DocumentPicker from 'react-native-document-picker';
+import axios from 'axios';
+import RNFetchBlob from 'rn-fetch-blob';
+
+const FileUploadDownload = () => {
+    const [file, setFile] = useState(null);
+    const [downloadStatus, setDownloadStatus] = useState('');
+
+    const selectFile = async () => {
+        try {
+            const res = await DocumentPicker.pick({
+                type: [DocumentPicker.types.allFiles],
+            });
+            setFile(res[0]);
+        } catch (err) {
+            if (DocumentPicker.isCancel(err)) {
+                alert('Canceled');
+            } else {
+                console.error(err);
+                alert('Error selecting file');
+            }
+        }
+    };
+
+    const uploadFile = async () => {
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', {
+            uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+            name: file.name,
+            type: file.type,
+        });
+
+        try {
+            const response = await axios.post('http://localhost:8080/api/files/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            alert('File uploaded successfully');
+        } catch (error) {
+            console.error(error);
+            alert('File upload failed');
+        }
+    };
+
+    const downloadFile = async () => {
+        const { config, fs } = RNFetchBlob;
+        let DownloadDir = fs.dirs.DownloadDir;
+        let filePath = `${DownloadDir}/downloadedFile.jpg`; // Change file type accordingly
+
+        let options = {
+            fileCache: true,
+            addAndroidDownloads: {
+                useDownloadManager: true,
+                notification: true,
+                path: filePath,
+                description: 'Downloading file',
+            },
+            path: filePath, // For iOS
+        };
+
+        config(options)
+            .fetch('GET', 'http://localhost:8080/api/files/download/yourfile.jpg') // Replace with your actual file path
+            .then((res) => {
+                setDownloadStatus('File downloaded successfully');
+            })
+            .catch((error) => {
+                console.error(error);
+                setDownloadStatus('File download failed');
+            });
+    };
+
+    return (
+        <View style={styles.container}>
+            <Button title="Select File" onPress={selectFile} />
+            {file && <Text style={styles.text}>File Selected: {file.name}</Text>}
+            <Button title="Upload File" onPress={uploadFile} />
+            <Button title="Download File" onPress={downloadFile} />
+            {downloadStatus !== '' && <Text style={styles.text}>{downloadStatus}</Text>}
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+    },
+    text: {
+        margin: 10,
+        fontSize: 16,
+    },
+});
+
+export default FileUploadDownload;
