@@ -13,7 +13,8 @@ const App = () => {
             const res = await DocumentPicker.pick({
                 type: [DocumentPicker.types.allFiles],
             });
-            setFile(res[0]); // Ensure res is an array and access the first file
+            // Store the file information
+            setFile(res[0]);
         } catch (err) {
             if (DocumentPicker.isCancel(err)) {
                 Alert.alert('Canceled');
@@ -25,13 +26,18 @@ const App = () => {
     };
 
     const uploadFile = async () => {
-        if (!file) return;
+        if (!file) {
+            Alert.alert('No file selected');
+            return;
+        }
+
+        const { uri, name, type } = file;
 
         const formData = new FormData();
         formData.append('file', {
-            uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
-            name: file.name,
-            type: file.type,
+            uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+            name: name,
+            type: type,
         });
 
         try {
