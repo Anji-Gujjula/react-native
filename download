@@ -1,0 +1,76 @@
+import React, { useState } from 'react';
+import { View, Button, StyleSheet, Alert, Text, ScrollView, TouchableOpacity } from 'react-native';
+import RNFetchBlob from 'rn-fetch-blob';
+import axios from 'axios';
+
+const App = () => {
+  const [fileList, setFileList] = useState([]);
+
+  // Backend URL
+  const BACKEND_URL = 'http://YOUR_BACKEND_IP:5000';
+
+  const fetchFileList = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/files`);
+      setFileList(response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Could not fetch file list.');
+    }
+  };
+
+  const downloadFile = (filePath) => {
+    const { config, fs } = RNFetchBlob;
+    let DownloadDir = fs.dirs.DownloadDir;
+    let fileUrl = `${BACKEND_URL}${filePath}`;
+    let fileName = filePath.split('/').pop();
+
+    config({
+      fileCache: true,
+      addAndroidDownloads: {
+        useDownloadManager: true,
+        notification: true,
+        path: `${DownloadDir}/${fileName}`,
+        description: 'Downloading file',
+      },
+    })
+      .fetch('GET', fileUrl)
+      .then((res) => {
+        Alert.alert('File Downloaded', `File saved to ${res.path()}`);
+      })
+      .catch((error) => {
+        Alert.alert('Error', error.message);
+      });
+  };
+
+  return (
+    <View style={styles.container}>
+      <Button title="Download Files" onPress={fetchFileList} />
+      <ScrollView style={styles.fileList}>
+        {fileList.map((file, index) => (
+          <TouchableOpacity key={index} onPress={() => downloadFile(file.path)}>
+            <Text style={styles.fileItem}>{file.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  fileList: {
+    marginTop: 20,
+  },
+  fileItem: {
+    padding: 10,
+    fontSize: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+});
+
+export default App;
