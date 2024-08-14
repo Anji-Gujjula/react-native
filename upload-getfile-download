@@ -1,0 +1,132 @@
+import React, { useState } from 'react';
+import { View, Button, StyleSheet, Alert, Text, ScrollView, TouchableOpacity } from 'react-native';
+import axios from 'axios';
+import RNFetchBlob from 'rn-fetch-blob';
+import DocumentPicker from 'react-native-document-picker';
+
+const App = () => {
+  const [fileList, setFileList] = useState([]);
+  const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // Backend URL
+  const BACKEND_URL = 'http://YOUR_BACKEND_IP:5000';
+
+  // Fetch the list of files from the backend
+  const fetchFileList = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/files`);
+      if (Array.isArray(response.data)) {
+        setFileList(response.data);
+        setError('');
+      } else {
+        setError('Unexpected response format');
+      }
+    } catch (error) {
+      setError('Could not fetch file list. Please check the backend.');
+    }
+  };
+
+  // Download the selected file
+  const downloadFile = (fileName) => {
+    const { config, fs } = RNFetchBlob;
+    let DownloadDir = fs.dirs.DownloadDir;
+    let fileUrl = `${BACKEND_URL}/download/${fileName}`;
+    let filePath = `${DownloadDir}/${fileName}`;
+
+    config({
+      fileCache: true,
+      addAndroidDownloads: {
+        useDownloadManager: true,
+        notification: true,
+        path: filePath,
+        description: 'Downloading file',
+      },
+    })
+      .fetch('GET', fileUrl)
+      .then((res) => {
+        Alert.alert('File Downloaded', `File saved to ${res.path()}`);
+      })
+      .catch((error) => {
+        Alert.alert('Error', error.message);
+      });
+  };
+
+  // Upload a file
+  const uploadFile = async () => {
+    try {
+      const res = await DocumentPicker.pickSingle({
+        type: [DocumentPicker.types.allFiles],
+      });
+
+      setUploading(true);
+
+      const file = res.uri;
+      const fileName = res.name;
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: file,
+        name: fileName,
+        type: res.type,
+      });
+
+      await axios.post(`${BACKEND_URL}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      Alert.alert('Success', 'File uploaded successfully');
+      setUploading(false);
+      fetchFileList(); // Refresh file list
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      Alert.alert('Error', 'Failed to upload file. Please try again.');
+      setUploading(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Button title="Get All Files" onPress={fetchFileList} />
+      <Button title="Upload File" onPress={uploadFile} disabled={uploading} />
+      {error ? (
+        <Text style={styles.error}>{error}</Text>
+      ) : (
+        <ScrollView style={styles.fileList}>
+          {fileList.map((fileName, index) => (
+            <TouchableOpacity key={index} onPress={() => downloadFile(fileName)}>
+              <Text style={styles.fileItem}>{fileName}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  fileList: {
+    marginTop: 20,
+  },
+  fileItem: {
+    padding: 10,
+    fontSize: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  error: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+});
+
+export default App;
