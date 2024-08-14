@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Button, StyleSheet, Alert, Text, ScrollView, TouchableOpacity } from 'react-native';
-import RNFetchBlob from 'rn-fetch-blob';
 import axios from 'axios';
 
 const App = () => {
@@ -9,47 +8,28 @@ const App = () => {
   // Backend URL
   const BACKEND_URL = 'http://YOUR_BACKEND_IP:5000';
 
+  // Fetch the list of files from the backend
   const fetchFileList = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/files`);
-      setFileList(response.data);
+
+      // Set the response data directly to the fileList
+      if (Array.isArray(response.data)) {
+        setFileList(response.data);
+      } else {
+        Alert.alert('Error', 'Unexpected response format');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Could not fetch file list.');
+      Alert.alert('Error', 'Could not fetch file list. Please check the backend.');
     }
-  };
-
-  const downloadFile = (filePath) => {
-    const { config, fs } = RNFetchBlob;
-    let DownloadDir = fs.dirs.DownloadDir;
-    let fileUrl = `${BACKEND_URL}${filePath}`;
-    let fileName = filePath.split('/').pop();
-
-    config({
-      fileCache: true,
-      addAndroidDownloads: {
-        useDownloadManager: true,
-        notification: true,
-        path: `${DownloadDir}/${fileName}`,
-        description: 'Downloading file',
-      },
-    })
-      .fetch('GET', fileUrl)
-      .then((res) => {
-        Alert.alert('File Downloaded', `File saved to ${res.path()}`);
-      })
-      .catch((error) => {
-        Alert.alert('Error', error.message);
-      });
   };
 
   return (
     <View style={styles.container}>
-      <Button title="Download Files" onPress={fetchFileList} />
+      <Button title="Get All Files" onPress={fetchFileList} />
       <ScrollView style={styles.fileList}>
-        {fileList.map((file, index) => (
-          <TouchableOpacity key={index} onPress={() => downloadFile(file.path)}>
-            <Text style={styles.fileItem}>{file.name}</Text>
-          </TouchableOpacity>
+        {fileList.map((fileName, index) => (
+          <Text key={index} style={styles.fileItem}>{fileName}</Text>
         ))}
       </ScrollView>
     </View>
